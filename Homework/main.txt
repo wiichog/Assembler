@@ -1,0 +1,455 @@
+/******************************************************************************
+*	main.s
+*	 by Alex Chadwick
+*
+*	A sample assembly code implementation of the input02 operating system, that 
+*	demonstrates a command line interface.
+*
+*	main.s contains the main operating system, and IVT code.
+******************************************************************************/
+
+/*
+* .globl is a directive to our assembler, that tells it to export this symbol
+* to the elf file. Convention dictates that the symbol _start is used for the 
+* entry point, so this all has the net effect of setting the entry point here.
+* Ultimately, this is useless as the elf itself is not used in the final 
+* result, and so the entry point really doesn't matter, but it aids clarity,
+* allows simulators to run the elf, and also stops us getting a linker warning
+* about having no entry point. 
+*/
+.section .init
+.globl _start
+_start:
+
+/*
+* Branch to the actual main code.
+*/
+b main
+
+/*
+* This command tells the assembler to put this code with the rest.
+*/
+.section .text
+
+/*
+* main is what we shall call our main operating system method. It never 
+* returns, and takes no parameters.
+* C++ Signature: void main(void)
+*/
+main:
+
+/*
+* Set the stack point to 0x8000.
+*/
+	mov sp,#0x8000
+
+/* 
+* Setup the screen.
+*/
+
+	mov r0,#1024
+	mov r1,#768
+	mov r2,#16
+	bl InitialiseFrameBuffer
+
+/* 
+* Check for a failed frame buffer.
+*/
+	teq r0,#0
+	bne noError$
+		
+	mov r0,#16
+	mov r1,#1
+	bl SetGpioFunction
+
+	mov r0,#16
+	mov r1,#0
+	bl SetGpio
+
+	error$:
+		b error$
+
+	noError$:
+
+	fbInfoAddr .req r8
+	mov fbInfoAddr,r0
+
+/*
+* Let our drawing method know where we are drawing to.
+*/
+	bl SetGraphicsAddress
+
+	bl UsbInitialise
+	
+reset$:
+	mov sp,#0x8000
+	bl TerminalClear
+
+	ldr r0,=welcome
+	mov r1,#welcomeEnd-welcome
+	bl Print
+
+loop$:		
+	ldr r0,=prompt
+	mov r1,#promptEnd-prompt
+	bl Print
+
+	ldr r0,=command
+	mov r1,#commandEnd-command
+	bl ReadLine
+
+	teq r0,#0
+	beq loopContinue$
+
+	mov r4,r0
+	
+	ldr r5,=command
+	ldr r6,=commandTable
+	
+	ldr r7,[r6,#0]
+	ldr r9,[r6,#4]
+	commandLoop$:
+		ldr r8,[r6,#8]
+		sub r1,r8,r7
+
+		cmp r1,r4
+		bgt commandLoopContinue$
+
+		mov r0,#0	
+		commandName$:
+			ldrb r2,[r5,r0]
+			ldrb r3,[r7,r0]
+			teq r2,r3			
+			bne commandLoopContinue$
+			add r0,#1
+			teq r0,r1
+			bne commandName$
+
+		ldrb r2,[r5,r0]
+		teq r2,#0
+		teqne r2,#' '
+		bne commandLoopContinue$
+
+		mov r0,r5
+		mov r1,r4
+		mov lr,pc
+		mov pc,r9
+		b loopContinue$
+
+	commandLoopContinue$:
+		add r6,#8
+		mov r7,r8
+		ldr r9,[r6,#4]
+		teq r9,#0
+		bne commandLoop$	
+
+	ldr r0,=commandUnknown
+	mov r1,#commandUnknownEnd-commandUnknown
+	ldr r2,=formatBuffer
+	ldr r3,=command
+	bl FormatString
+
+	mov r1,r0
+	ldr r0,=formatBuffer
+	bl Print
+
+loopContinue$:
+	bl TerminalDisplay
+	b loop$
+/********** codigo para verificar que se ingreso comando color */
+
+		x .req r0
+		y .req r1
+		alto .req r2
+		ancho .req r3
+		personaje .req r4
+		fbAddr .req r5
+		
+cargarfondo$:
+
+		
+		mov x,#0
+		mov y,#0
+	
+		
+		ldr personaje,=fondo
+		ldr alto,=fondoHeight
+		ldr ancho,=fondoWidth
+		ldr y,=fondoHeight
+		ldr x,=fondoWidth
+		
+		ldr fbAddr,[fbInfoAddr,#32]	
+		
+		push {r4}
+		push {r5}
+		bl drawImage
+cargarImagen1$:
+		mov x,#512
+		mov y,#768
+	
+		
+		ldr personaje,=pistola1
+		ldr alto,=pistola1Height
+		ldr ancho,=pistola1Width
+		ldr y,=pistola1Height
+		ldr x,=pistola1Width
+		
+		ldr fbAddr,[fbInfoAddr,#32]	
+		
+		push {r4}
+		push {r5}
+		bl drawImage		
+cargarImagen2$:
+		mov x,#512
+		mov y,#768
+	
+		
+		ldr personaje,=pistola2
+		ldr alto,=pistola2Height
+		ldr ancho,=pistola2Width
+		ldr y,=pistola2Height
+		ldr x,=pistola2Width
+		
+		ldr fbAddr,[fbInfoAddr,#32]	
+		
+		push {r4}
+		push {r5}
+		bl drawImage	
+cargarImagen3$:
+		mov x,#512
+		mov y,#768
+	
+		
+		ldr personaje,=pistola3
+		ldr alto,=pistola3Height
+		ldr ancho,=pistola3Width
+		ldr y,=pistola3Height
+		ldr x,=pistola3Width
+		
+		ldr fbAddr,[fbInfoAddr,#32]	
+		
+		push {r4}
+		push {r5}
+		bl drawImage	
+cargarImagen4$:
+		mov x,#512
+		mov y,#768
+	
+		
+		ldr personaje,=pistola4
+		ldr alto,=pistola4Height
+		ldr ancho,=pistola4Width
+		ldr y,=pistola4Height
+		ldr x,=pistola4Width
+		
+		ldr fbAddr,[fbInfoAddr,#32]	
+		
+		push {r4}
+		push {r5}
+		bl drawImage			
+color:
+	teq r1,#10	//rojo
+	beq rojo
+	teq r1,#11	//verde
+	beq verde
+	teq r1,#6	//blanco
+	beq blanco
+	teq r1,#13
+	beq magenta
+	bne error22
+verde:
+	ldrb r2,[r0,#6]
+	teq r2,#'v'
+	bne error22
+	ldreqb r2,[r0,#7]
+	teqeq r2,#'e'
+	bne error22
+	ldreqb r2,[r0,#8]
+	teqeq r2,#'r'
+	bne error22
+	ldreqb r2,[r0,#9]
+	teqeq r2,#'d'
+	bne error22
+	ldreqb r2,[r0,#10]
+	teqeq r2,#'e'
+	bne error22
+	mov r11,#0x2 //verde
+	ldr r10,=terminalColour
+	strb r11,[r10]
+	
+	ldr r0,=Cverde
+	mov r1,#CverdeEnd-Cverde
+	b Print
+	mov pc,lr
+	
+rojo: 
+	ldrb r2,[r0,#6]
+	teq r2,#'r'
+	bne error22
+	ldreqb r2,[r0,#7]
+	teqeq r2,#'o'
+	bne error22
+	ldreqb r2,[r0,#8]
+	teqeq r2,#'j'
+	bne error22
+	ldrb r2,[r0,#9]
+	teqeq r2,#'o'
+	bne error22
+	mov r11,#0x1 //rojo
+	ldr r10,=terminalColour
+	strb r11,[r10]
+	
+	ldr r0,=Crojo
+	mov r1,#CrojoEnd-Crojo
+	b Print
+	mov pc,lr
+	
+blanco: 
+	mov r11,#0xf //blanco
+	ldr r10,=terminalColour
+	strb r11,[r10]
+	
+	ldr r0,=Cblanco
+	mov r1,#CblancoEnd-Cblanco
+	b Print
+	mov pc,lr
+	
+magenta:
+
+	ldrb r2,[r0,#6]
+	teq r2,#'m'
+	bne error22
+	ldreqb r2,[r0,#7]
+	teqeq r2,#'a'
+	bne error22
+	ldreqb r2,[r0,#8]
+	teqeq r2,#'g'
+	bne error22
+	ldrb r2,[r0,#9]
+	teqeq r2,#'e'
+	bne error22
+	ldreqb r2,[r0,#10]
+	teqeq r2,#'n'
+	bne error22
+	ldreqb r2,[r0,#11]
+	teqeq r2,#'t'
+	bne error22
+	ldreqb r2,[r0,#12]
+	teqeq r2,#'a'
+	bne error22
+	mov r11,#0x5 //magenta
+	ldr r10,=terminalColour
+	strb r11,[r10]
+
+	ldr r0,=Cmagenta
+	mov r1,#CmagentaEnd-Cmagenta
+	b Print
+	mov pc,lr
+error22:
+	ldr r0,=error2
+	mov r1,#error2End-error2
+	b Print
+	mov pc,lr
+	
+/******* fin del codigo agregado */
+echo:
+	cmp r1,#5
+	movle pc,lr
+
+	add r0,#5
+	sub r1,#5 
+	b Print
+
+ok:
+	teq r1,#5
+	beq okOn$
+	teq r1,#6
+	beq okOff$
+	mov pc,lr
+
+	okOn$:
+		ldrb r2,[r0,#3]
+		teq r2,#'o'
+		ldreqb r2,[r0,#4]
+		teqeq r2,#'n'
+		movne pc,lr
+		mov r1,#0
+		b okAct$
+
+	okOff$:
+		ldrb r2,[r0,#3]
+		teq r2,#'o'
+		ldreqb r2,[r0,#4]
+		teqeq r2,#'f'
+		ldreqb r2,[r0,#5]
+		teqeq r2,#'f'
+		movne pc,lr
+		mov r1,#1
+
+	okAct$:
+		mov r0,#16
+		b SetGpio
+	
+.section .data
+.align 2
+welcome:
+	.ascii "Welcome to Alex's OS - Everyone's favourite OS"	
+welcomeEnd:
+.align 2
+Crojo:
+	.ascii "Cambio de color a rojo"	
+CrojoEnd:
+.align 2
+Cverde:
+	.ascii "Cambio de color a verde"	
+CverdeEnd:
+.align 2
+Cmagenta:
+	.ascii "Cambio de color a magenta"	
+CmagentaEnd:
+.align 2
+Cblanco:
+	.ascii "Cambio de color a blanco"	
+CblancoEnd:
+.align 2
+error2:
+	.ascii "Color no registrado"
+error2End:	
+.align 2
+prompt:
+	.ascii "\n> "
+promptEnd:
+.align 2
+command:
+	.rept 128
+		.byte 0
+	.endr
+commandEnd:
+.byte 0
+.align 2
+commandUnknown:
+	.ascii "Command `%s' was not recognised.\n"
+commandUnknownEnd:
+.align 2
+formatBuffer:
+	.rept 256
+	.byte 0
+	.endr
+formatEnd:
+
+.align 2
+commandStringEcho: .ascii "echo"
+commandStringReset: .ascii "reset"
+commandStringOk: .ascii "ok"
+commandStringCls: .ascii "cls"
+commandColor: .ascii "color" //linea agregada
+commandStringEnd:
+
+.align 2
+commandTable:
+.int commandStringEcho, echo
+.int commandStringReset, reset$
+.int commandStringOk, ok
+.int commandStringCls, TerminalClear
+.int commandColor, color //linea agregada
+.int commandStringEnd, 0
