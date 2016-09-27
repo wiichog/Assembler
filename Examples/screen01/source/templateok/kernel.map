@@ -1,0 +1,79 @@
+
+Discarded input sections
+
+ .bss           0x00000000        0x0 build/frameBuffer.o
+ .ARM.attributes
+                0x00000000       0x14 build/frameBuffer.o
+ .bss           0x00000000        0x0 build/gpio.o
+ .ARM.attributes
+                0x00000000       0x14 build/gpio.o
+ .bss           0x00000000        0x0 build/mailbox.o
+ .ARM.attributes
+                0x00000000       0x14 build/mailbox.o
+ .bss           0x00000000        0x0 build/main.o
+ .ARM.attributes
+                0x00000000       0x14 build/main.o
+ .bss           0x00000000        0x0 build/mario.o
+ .ARM.attributes
+                0x00000000       0x14 build/mario.o
+ .bss           0x00000000        0x0 build/systemTimer.o
+ .ARM.attributes
+                0x00000000       0x14 build/systemTimer.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD build/frameBuffer.o
+LOAD build/gpio.o
+LOAD build/mailbox.o
+LOAD build/main.o
+LOAD build/mario.o
+LOAD build/systemTimer.o
+LOAD .\libcsud.a
+
+.init           0x00008000        0x4
+ *(.init)
+ .init          0x00008000        0x4 build/main.o
+                0x00008000                _start
+
+.data           0x00009000     0x57e4
+ *(.data)
+ .data          0x00009000     0x1000 build/frameBuffer.o
+                0x00009000                FrameBufferInfo
+ .data          0x0000a000        0x0 build/gpio.o
+ .data          0x0000a000        0x0 build/mailbox.o
+ .data          0x0000a000        0x0 build/main.o
+ .data          0x0000a000     0x47e4 build/mario.o
+                0x0000a000                marioHeight
+                0x0000a002                marioWidth
+                0x0000a004                mario
+ .data          0x0000e7e4        0x0 build/systemTimer.o
+ *.c.o(*)
+
+.text           0x0000e7e4      0x240
+ *.c.o(.text)
+ *(.text)
+ .text          0x0000e7e4       0x60 build/frameBuffer.o
+                0x0000e7e4                InitialiseFrameBuffer
+ .text          0x0000e844       0x98 build/gpio.o
+                0x0000e844                GetGpioAddress
+                0x0000e84c                SetGpioFunction
+                0x0000e89c                SetGpio
+ .text          0x0000e8dc       0x6c build/mailbox.o
+                0x0000e8dc                GetMailboxBase
+                0x0000e8e4                MailboxRead
+                0x0000e918                MailboxWrite
+ .text          0x0000e948       0x9c build/main.o
+ .text          0x0000e9e4        0x0 build/mario.o
+ .text          0x0000e9e4       0x40 build/systemTimer.o
+                0x0000e9e4                GetSystemTimerBase
+                0x0000e9ec                GetTimeStamp
+                0x0000e9fc                Wait
+
+/DISCARD/
+ *(*)
+OUTPUT(build/output.elf elf32-littlearm)
